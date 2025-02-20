@@ -34,6 +34,5 @@ torchaudio==2.4.0
 torchensemble==0.2.0
 torchsummary==1.5.1
 tqdm==4.66.2
-tsne==0.1.5
 wikipedia==1.4.0
 xgboost==2.1.1
