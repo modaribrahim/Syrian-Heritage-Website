@@ -5,6 +5,7 @@ colorama
 faiss-cpu
 fastapi
 huggingface-hub
+uvicorn
 joblib
 langchain
 langchain-community
