@@ -96,7 +96,7 @@ efficientnet_pytorch==0.7.1
 einops==0.7.0
 email_validator==2.2.0
 emoji==2.14.1
-en_core_web_sm==3.8.0
+en_core_web_sm
 ensureconda==1.4.4
 etelemetry==0.3.1
 eval_type_backport==0.2.0
