@@ -9,7 +9,6 @@ duckduckgo_search==7.2.1
 ee==0.2
 effdet==0.4.1
 email_validator==2.2.0
-en_cero
 faiss-cpu==1.10.0
 fastai==2.7.17
 fastapi==0.115.8
