@@ -14,6 +14,7 @@ langchain-groq
 langchain-xai
 langgraph
 langgraph-checkpoint-sqlite
+pyspellchecker
 matplotlib
 numpy
 optuna
