@@ -14,6 +14,7 @@ app = FastAPI()
 class ChatRequest(BaseModel):
     message: str
     summary: str
+    user_id: str
     session_id: str
 
 # while True:
@@ -41,7 +42,7 @@ async def chat(request: ChatRequest):
 
         rprint(Panel("AI: " + response_text))
 
-        return {"message": response_text,'session_id':request.session_id , 'summary': request.summary}
+        return {"message": response_text,'session_id':request.session_id , 'summary': request.summary , 'user_id': request.user_id}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

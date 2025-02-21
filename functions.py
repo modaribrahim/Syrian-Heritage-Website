@@ -1,7 +1,7 @@
 import operator
 from config import config
 import os
-from langchain.embeddings import HuggingFaceEmbeddings # type: ignore
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from utils import bcolors, get_tavily_search , get_duckduckgo_search, get_res
 from langgraph.graph import MessagesState # type: ignore
 from langchain_core.messages import SystemMessage, HumanMessage, RemoveMessage # type: ignore
@@ -11,8 +11,27 @@ from dotenv import load_dotenv # type: ignore
 from langchain.schema import Document  
 import numpy as np
 import pickle
-from typing import Annotated
+from typing import Annotated, Literal
+from pydantic import BaseModel, Field # type: ignore
 import faiss
+import re
+from sentence_transformers import SentenceTransformer
+import joblib
+import time 
+
+embedder = SentenceTransformer('all-MiniLM-L6-v2')
+clf = joblib.load("intent_classifier.pkl")
+
+def classify_intent_using_ml(query):
+    query_lower = query.lower()
+    if re.search(r"\b(hello|marhaba|hi|good|thank|joke|poem|fun|Keefak|peace upon you|Morning|Evening)\b", query_lower):
+        return "no_rag"
+
+    query_embedding = embedder.encode([query])[0]
+    pred = clf.predict([query_embedding])[0]
+    return "yes" if pred == 1 else "no"
+
+
 load_dotenv()
 
 os.environ['GROQ_API_KEY'] = os.getenv("GROQ_API_KEY")
@@ -25,7 +44,14 @@ class State(MessagesState):
     question: str
     generation: str
 
+class ClassifyQuery(BaseModel):
+    """Binary score for intent classification."""
+    binary_score: Literal["yes", "no"] = Field(
+        description="User query intent needs to use RAG or not, 'yes' or 'no'"
+    )
+
 model_name = config['model_name']
+classifier_name = config['classifier_name']
 top_k = config['top_k']
 
 embeddings_model_name = config['embedding_model_name']
@@ -45,28 +71,48 @@ with open("my_vector_db.pkl", "rb") as f:
 
 generation_node = GenerationNode(model_name)
 grader_node = GraderNode(model_name)
-model = ChatGroq(model_name=model_name, temperature=0)
+model = ChatGroq(model_name=model_name, temperature=0.2)
+intent_classifier_model = ChatGroq(model_name=classifier_name, temperature=0)
+intent_classifier_model = intent_classifier_model.with_structured_output(ClassifyQuery)
 
 
-
-##########################################################################################
-def intent_classifier(state: State):
+def intent_classifier(state: State , use_ml = True):
     print(bcolors.OKBLUE + 'Running the intent classifier..' + bcolors.ENDC)
     question = state.get("question",'')
     summary = state.get('summary','')
-    rag_prompt = f'''You got the following 
-    user query: {question}. Return only and only 'yes' or 'no': \n
-    - return yes if the query needs to retrieve information about history from the database (the question is about history/culutre). \n
-    - retunr no if the query doesn't need to retrieve information from the data base (such as greeting or not history/culture related).
-    - Note that your response should be only and only 'yes' or 'no'.
-    '''
-    response = model.invoke([SystemMessage(content=rag_prompt)])
+
+    rag_prompt = f'''You received the following query: "{question}". Determine if this query requires retrieving historical or cultural information from the database.
+
+    - Answer "yes" if the query asks for detailed historical or cultural data.
+    - Answer "no" if the query is casual, general, or does not require such data (e.g., greetings, jokes, or simple facts).
+
+    Examples that should return "no":
+    - What is the capital of Syria?
+    - Hello.
+    - Tell me a joke about Syria.
+    - What is a delicious dish in Syria?
+
+    Examples that should return "yes":
+    - What cultural significance did wine hold in the ancient Near East, and how did it impact the daily lives of people in the region?
+    - What was the total number of locations in the region after the additions during the Greco-Roman period?
+    - How did the sultan's punitive expedition affect the villages in the region where the robbery took place?
+
+    Return only a binary score "yes" or "no" with no additional text.'''
     no_rag = False
-    
-    if response.content.lower() == 'yes':
-        no_rag = False
+    if use_ml == True:
+        pred = classify_intent_using_ml(question)
+        if pred.lower() == 'yes':
+            no_rag = False
+        else:
+            no_rag = True
     else:
-        no_rag = True
+        response = intent_classifier_model.invoke([SystemMessage(content=rag_prompt)])
+        no_rag = False
+        0
+        if response.binary_score.lower() == 'yes':
+            no_rag = False
+        else:
+            no_rag = True
     return {'question': question , 'messages': question, 'no_rag': no_rag}
 
 # def retrieve(state: State):

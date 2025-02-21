@@ -7,6 +7,10 @@ import os
 from dotenv import load_dotenv # type: ignore
 from langchain_community.tools import TavilySearchResults
 from langchain_community.tools import DuckDuckGoSearchRun
+from spellchecker import SpellChecker
+import re
+
+spell = SpellChecker()
 
 
 def remove_think_content(text):
@@ -25,7 +29,6 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     
-import re
 def clean_pdf_text(content):
 
     content = re.sub(r'\s+', ' ', content)
@@ -36,7 +39,11 @@ def clean_pdf_text(content):
 
     content = re.sub(r'(\w+)-\s+(\w+)', r'\1\2', content)
 
-    content = '\n'.join([line.strip() for line in content.split('\n') if line.strip()])
+    words = content.split()
+
+    corrected = [spell.correction(word) if word in spell else word for word in words]
+
+    content = ' '.join([line.strip() for line in corrected.split('\n') if line.strip()])
 
     return content
 

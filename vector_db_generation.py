@@ -11,6 +11,7 @@ from langchain.schema import Document  # type: ignore
 import pytesseract
 from pdf2image import convert_from_path
 from tqdm import tqdm
+
 embeddings_model_name = config['embedding_model_name']
 model_kwargs = {'device': config['device']}
 encode_kwargs = {'normalize_embeddings': config['normalize_embeddings']}
@@ -19,10 +20,9 @@ print(bcolors.WARNING + 'Initializing embedding model...' + bcolors.ENDC)
 
 embeddings = HuggingFaceEmbeddings(
     model_name=embeddings_model_name,
-    model_kwargs=model_kwargs,
-    encode_kwargs=encode_kwargs
+    model_kwargs={'device': 'cpu'},
+    encode_kwargs={'normalize_embeddings': True}
 )
-
 print(bcolors.WARNING + 'Converting the pdf file to md...' + bcolors.ENDC)
 books_path = '/home/modar/Desktop/'
 books = ["ancient-syria.pdf" , "History_of_syria.pdf" ]
@@ -39,9 +39,15 @@ for img in tqdm(images):
 
 clean_text = clean_pdf_text(text)
 
+# text_splitter = RecursiveCharacterTextSplitter(
+#     chunk_size=512,#384,
+#     chunk_overlap=128,#100,
+#     length_function=len,
+#     separators=["\n\n", "\n", ". ", " ", ""]
+# )
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=512,#384,
-    chunk_overlap=128,#100,
+    chunk_size=256,  #
+    chunk_overlap=100,
     length_function=len,
     separators=["\n\n", "\n", ". ", " ", ""]
 )
