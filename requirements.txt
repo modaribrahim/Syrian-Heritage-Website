@@ -17,7 +17,6 @@ langgraph-checkpoint-sqlite
 pyspellchecker
 matplotlib
 numpy
-optuna
 pandas
 pdf2image
 pydantic
@@ -27,15 +26,11 @@ pytesseract
 requests
 scikit-learn
 scipy
-seaborn
 sentence-transformers
 streamlit
 tavily-python
 torch
-torchaudio
 torchensemble
-torchsummary
 tqdm
 wikipedia
-xgboost
 langchain-core
